@@ -13,7 +13,7 @@ public class Car
     public CarBody Body { get; set; } // material of the car body
     public int SteeringWheel { get; set; } // degrees of steering wheel
     public bool BrakePedal { get; set; } // when true, car is braking
-    public int Tank { get; set; }// percentage of fuel
+    public int Tank { get; set; } // percentage of fuel
     public CarFuelType FuelType { get; set; } // type of fuel 
     public bool Accelerator { get; set; } // when true, car is accelerating
     public CarType Type { get; set; }
@@ -41,6 +41,23 @@ public class Car
         Array carModel = Enum.GetValues(typeof(CarType));
         Type = (CarType) carModel.GetValue(rnd.Next(carModel.Length));
 
+        if (Type == CarType.truck)
+        {
+            Horn = HornType.trumpet;
+        }
+        else
+        {
+
+            if (rnd.Next(0, 9) == 0)
+            {
+                Horn = HornType.trumpet;
+            }
+            else
+            {
+                Horn = HornType.horn;
+            }
+        }
+
         Plate = GeneratePlate();
     }
 
@@ -48,14 +65,21 @@ public class Car
     {
         // generate a random plate that must be unique
         string plate = "";
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 2; i++)
         {
             plate += (char) rnd.Next(65, 90);
         }
         plate += "-";
+
         for (int i = 0; i < 3; i++)
         {
             plate += rnd.Next(0, 9);
+        }
+        plate += "-";
+
+        for (int i = 0; i < 2; i++)
+        {
+            plate += (char)rnd.Next(65, 90);
         }
 
         return plate;
@@ -182,19 +206,15 @@ public class Car
 
     public async Task<string> Honk()
     {
-        switch (Type)
+        switch(Horn)
         {
-            case CarType.truck:
-                return "truck honk";
-            case (CarType.sport):
-                return "sport honk";
-            case (CarType.compact):
-                return "compact honk";
-            case (CarType.suv):
-                return "suv honk";
+            case HornType.horn:
+                return "BEEP!";
+            case HornType.trumpet:
+                return "DA-DA-DA-DA-DAAH!";
         }
 
-        return "horn not installed";
+        return "NO HORN MOUNTED";
     }
 }
 

@@ -1,6 +1,6 @@
 ﻿using CarSim.BackEnd.Context;
-using CarSim.BackEnd.lib;
 using CarSim.BackEnd.Models;
+using CarSim.BackEnd.Services.CarServices;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,32 +11,30 @@ namespace CarSim.BackEnd.Controller
     public class CarController : ControllerBase
     {
         private DataContext _context;
-        private Utility _utils;
-        public CarController(DataContext context, Utility utils)
+        private ICarService _carService;
+
+        public CarController(DataContext context, ICarService carService)
         {
             _context = context;
-            _utils = utils;
+            _carService = carService;
         }
+
 
         // Create a new car and return the plate
         [Route("GenerateCar")]
         [HttpPost]
-        public async Task<ActionResult<String>> GenerateCar()
+        public async Task<ActionResult<ResponseMessage<string>>> GenerateCar()
         {
             try
             {
-                var car = new Car();
+                var resp = await _carService.GenerateCar();
 
-                // if the plate already exists, generate a new one
-                while (_utils.CheckPlate(car.Plate))
+                if(!resp.Success)
                 {
-                    car.Plate = car.GeneratePlate();
+                    return BadRequest(resp);
                 }
 
-                await _context.Cars.AddAsync(car);
-                await _context.SaveChangesAsync();
-
-                return Ok(car.Plate);
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -46,27 +44,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("CreateCar")]
         [HttpPost]
-        public async Task<ActionResult<Car>> CreateCar(int engine, CarBody body, CarType carType, CarFuelType fuelType)
+        public async Task<ActionResult<ResponseMessage<Car>>> CreateCar(int engine, CarBody body, CarType carType, CarFuelType fuelType)
         {
             try
             {
-                Car car = new Car
-                {
-                    Engine = engine,
-                    Body = body,
-                    Type = carType,
-                    FuelType = fuelType
-                };
+                var resp = await _carService.CreateCar(engine, body, carType, fuelType);
 
-                while (_utils.CheckPlate(car.Plate))
+                if(!resp.Success)
                 {
-                    car.Plate = car.GeneratePlate();
+                    return BadRequest(resp.Message);
                 }
 
-                await _context.Cars.AddAsync(car);
-                await _context.SaveChangesAsync();
-
-                return car;
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -76,18 +65,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("GetType")]
         [HttpGet]
-        public async Task<ActionResult<CarType>> GetCarType(string plate)
+        public async Task<ActionResult<ResponseMessage<CarType>>> GetCarType(string plate)
         {
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.GetCarType(plate);
 
-                if (car == null)
+                if(!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: "+ plate);
+                    return BadRequest(resp.Message);
                 }
 
-                return Ok(car.Type.ToString());
+                return Ok(resp);
             }
             catch(Exception ex)
             {
@@ -97,29 +86,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("Accelerate")]
         [HttpPost]
-        public async Task<ActionResult<Car>> Accelerate(string plate)
+        public async Task<ActionResult<ResponseMessage<Car>>> Accelerate(string plate)
         {
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.Accelerate(plate);
 
-                if (car == null)
+                if(!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: " + plate);
+                    return BadRequest(resp);
                 }
 
-                if(car.Tank == 0)
-                {
-                    car.Speed = 0;
-                    await _context.SaveChangesAsync();
-                    return BadRequest("The car is out of fuel, please fill it up");
-                }
-
-                await car.Accelerate();
-
-                await _context.SaveChangesAsync();
-
-                return Ok(car);
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -129,22 +107,18 @@ namespace CarSim.BackEnd.Controller
         
         [Route("Break")]
         [HttpPost]
-        public async Task<ActionResult<Car>> Break(string plate)
+        public async Task<ActionResult<ResponseMessage<Car>>> Break(string plate)
         {
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.Break(plate);
 
-                if (car == null)
+                if(!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: " + plate);
+                    return BadRequest(resp.Message);
                 }
 
-                await car.Break();
-
-                await _context.SaveChangesAsync();
-
-                return Ok(car);
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -155,33 +129,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("Steer")]
         [HttpPost]  
-        public async Task<ActionResult<Car>> Steer(string plate, SteerDir direction, int angles)
+        public async Task<ActionResult<ResponseMessage<Car>>> Steer(string plate, SteerDir direction, int angles)
         {
-            if(angles > 720)
-            {
-                return BadRequest("Max steering angle is 720");
-            }
-
-            if(int.IsNegative(angles))
-            {
-                return BadRequest("Steering angle must be positive");
-            }
-
-
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.Steer(plate, direction, angles);
 
-                if (car == null)
+                if(!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: " + plate);
+                    return BadRequest(resp);
                 }
 
-                await car.steer(direction, angles);
-
-                await _context.SaveChangesAsync();
-
-                return Ok(car);
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -191,18 +150,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("GetSpeed")]
         [HttpGet]
-        public async Task<ActionResult<int>> GetSpeed(string plate)
+        public async Task<ActionResult<ResponseMessage<int>>> GetSpeed(string plate)
         {
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.GetSpeed(plate);
 
-                if (car == null)
+                if(!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: " + plate);
+                    return BadRequest(resp);
                 }
 
-                return Ok(car.Speed < 130 ? $"You are going at {car.Speed} km/h" : $"You are going at {car.Speed} km/h, slow down!");
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -212,22 +171,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("GetDirection")]
         [HttpGet]
-        public async Task<ActionResult<int>> GetDirection(string plate)
+        public async Task<ActionResult<ResponseMessage<int>>> GetDirection(string plate)
         {
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.GetDirection(plate);
 
-                if (car == null)
+                if(!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: " + plate);
+                    return BadRequest(resp.Message);
                 }
 
-                return Ok(int.IsNegative(
-                    car.SteeringWheel) ? 
-                    $" The car is going to the left at {car.SteeringWheel} degrees" : 
-                    $" The car is going to the right at {car.SteeringWheel} degrees"
-                    );
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -238,22 +193,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("FillCar")]
         [HttpPost]
-        public async Task<ActionResult<Car>> FillCar(string plate, CarFuelType fuel)
+        public async Task<ActionResult<ResponseMessage<Car>>> FillCar(string plate, CarFuelType fuel)
         {
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.FillCar(plate, fuel);
 
-                if (car == null)
+                if (!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: " + plate);
+                    return BadRequest(resp.Message);
                 }
 
-                await car.Fill(fuel);
-
-                await _context.SaveChangesAsync();
-
-                return Ok(car);
+                return Ok(resp);
             }
             catch (Exception ex)
             {
@@ -263,22 +214,18 @@ namespace CarSim.BackEnd.Controller
 
         [Route("Honk")]
         [HttpPost]
-        public async Task<ActionResult<Car>> Honk(string plate)
+        public async Task<ActionResult<ResponseMessage<Car>>> Honk(string plate)
         {
             try
             {
-                var car = await _context.Cars.FirstOrDefaultAsync(x => x.Plate == plate);
+                var resp = await _carService.Honk(plate);
 
-                if (car == null)
+                if (!resp.Success)
                 {
-                    return NotFound("PLATE NOT FOUND: " + plate);
+                    return BadRequest(resp.Message);
                 }
 
-                await car.Honk();
-
-                await _context.SaveChangesAsync();
-
-                return Ok(car);
+                return Ok(resp);
             }
             catch (Exception ex)
             {
