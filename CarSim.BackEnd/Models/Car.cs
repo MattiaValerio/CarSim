@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using CarSim.BackEnd.Context;
+using System.ComponentModel.DataAnnotations;
 
-namespace CarSim.Shared.Models;
+namespace CarSim.BackEnd.Models;
 
 public class Car
 {
@@ -18,6 +19,8 @@ public class Car
 
 
     private Random rnd = new Random();
+    private DataContext _context;
+
     public Car()
     {
         Tank = rnd.Next(0, 100);
@@ -38,7 +41,7 @@ public class Car
         Plate = GeneratePlate();
     }
 
-    private string GeneratePlate()
+    public string GeneratePlate()
     {
         // generate a random plate that must be unique
         string plate = "";
@@ -51,7 +54,7 @@ public class Car
         {
             plate += rnd.Next(0, 9);
         }
-
+        
         return plate;
     }
 
