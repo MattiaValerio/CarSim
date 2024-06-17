@@ -185,7 +185,13 @@ public class Car
         switch (Type)
         {
             case CarType.truck:
-                return "h";
+                return "truck honk";
+            case (CarType.sport):
+                return "sport honk";
+            case (CarType.compact):
+                return "compact honk";
+            case (CarType.suv):
+                return "suv honk";
         }
 
         return "horn not installed";
