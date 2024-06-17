@@ -1,4 +1,5 @@
 ﻿using CarSim.BackEnd.Context;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.ComponentModel.DataAnnotations;
 
 namespace CarSim.BackEnd.Models;
@@ -7,7 +8,7 @@ public class Car
 {
     [Key]
     public string Plate { get; set; }
-    public int wheels { get; } = 4; // 4 wheels
+    public int Wheels { get; } = 4; // 4 wheels
     public int Engine { get; set; }
     public CarBody Body { get; set; } // material of the car body
     public int SteeringWheel { get; set; } // degrees of steering wheel
@@ -16,10 +17,12 @@ public class Car
     public CarFuelType FuelType { get; set; } // type of fuel 
     public bool Accelerator { get; set; } // when true, car is accelerating
     public CarType Type { get; set; }
+    public HornType Horn { get; set; }
+
+    public int Speed { get; set; }
 
 
     private Random rnd = new Random();
-    private DataContext _context;
 
     public Car()
     {
@@ -47,45 +50,180 @@ public class Car
         string plate = "";
         for (int i = 0; i < 3; i++)
         {
-            plate += (char)rnd.Next(65, 90);
+            plate += (char) rnd.Next(65, 90);
         }
         plate += "-";
         for (int i = 0; i < 3; i++)
         {
             plate += rnd.Next(0, 9);
         }
-        
+
         return plate;
     }
 
     public async Task Accelerate()
     {
         Accelerator = true;
-        await Task.Delay(1000);
+        if (Type == CarType.truck)
+        {
+            Speed += 4;
+            ConsumeFuel();
+        }
+        else if (Type == CarType.sport)
+        {
+            Speed += 7;
+            ConsumeFuel();
+        }
+        else
+        {
+            Speed += 6;
+            ConsumeFuel();
+        }
+
+        if (FuelType == CarFuelType.premiumFuel && Type != CarType.truck)
+        {
+            Speed += 1;
+        }
+
         Accelerator = false;
+        await Task.CompletedTask;
+    }
+
+    private void ConsumeFuel()
+    {
+        if (Type == CarType.sport || Type == CarType.truck)
+        {
+            if (Tank <= 5)
+            {
+                Tank = 0;
+            }
+            else
+            {
+                Tank -= 5;
+            }
+        }
+        else
+        {
+            if (Tank <= 3)
+            {
+                Tank = 0;
+            }
+            else
+            {
+                Tank -= 3;
+            }
+        }
+    }
+
+    public async Task Break()
+    {
+        if (Type == CarType.truck)
+        {
+            if (Speed <= 6)
+            {
+                Speed = 0;
+            }
+            else
+            {
+                Speed -= 6;
+            }
+        }
+        else
+        {
+            if (Speed <= 10)
+            {
+                Speed = 0;
+            }
+            else
+            {
+                Speed -= 10;
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    public async Task steer(SteerDir direction, int degrees)
+    {
+        if (direction == SteerDir.destra)
+        {
+            if (SteeringWheel + degrees >= 720)
+            {
+                SteeringWheel = 720;
+            }
+            else
+            {
+                SteeringWheel += degrees;
+
+            }
+        }
+        else
+        {
+            if (SteeringWheel - degrees <= -720)
+            {
+                SteeringWheel = -720;
+            }
+            else
+            {
+                SteeringWheel -= degrees;
+            }
+        }
+
+        await Task.CompletedTask;
+    }
+
+    public async Task Fill(CarFuelType fuel)
+    {
+        Tank = 100;
+        FuelType = fuel;
+
+        await Task.CompletedTask;
+    }
+
+    public async Task<string> Honk()
+    {
+        switch (Type)
+        {
+            case CarType.truck:
+                return "h";
+        }
+
+        return "horn not installed";
     }
 }
 
 public enum CarType
 {
-    compact,
-    sport,
-    suv,
-    truck
+    compact = 0,
+    sport = 1,
+    suv = 2,
+    truck = 3
 }
 
 public enum CarFuelType
 {
-    gasoline,
-    premiumFuel
+    gasoline = 0,
+    premiumFuel = 1
 }
 
 public enum CarBody
 {
-    metal,
-    plastic,
-    carbonFiber,
-    aluminum,
-    steel,
-    titanium
+    metal = 0,
+    plastic = 1,
+    carbonFiber = 2,
+    aluminum = 3,
+    steel = 4,
+    titanium = 5
+}
+
+public enum SteerDir
+{
+    destra,
+    sinistra
+}
+
+public enum HornType
+{
+    horn,
+    trumpet
 }

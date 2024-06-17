@@ -1,23 +1,24 @@
 using CarSim.BackEnd.Context;
+using CarSim.BackEnd.lib;
 using Microsoft.EntityFrameworkCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// add the schema filter, show the enum values in the swagger
+builder.Services.AddSwaggerGen(cfg=> cfg.SchemaFilter<EnumSchemaFilter>()); 
 
 var Configuration = builder.Configuration;
 builder.Services.AddDbContext<DataContext>(options =>
         options.UseNpgsql(Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<Utility>();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
