@@ -28,6 +28,7 @@ services:
       context: .
       dockerfile: CarSim.BackEnd/Dockerfile
     ports:
-      - "8080:8080"
+      - "8090:8080"
+      - "8091:8081"
     depends_on:
       - postgres

@@ -13,6 +13,8 @@ namespace CarSim.BackEnd.Services.CarServices
         {
             _context = context;
         }
+        
+        // Verify if the plate already exists
         public bool checkplate(string plate)
         {
             return _context.Cars.Any(c => c.Plate == plate);
@@ -387,7 +389,5 @@ namespace CarSim.BackEnd.Services.CarServices
                 };
             }
         }
-
-       
     }
 }
