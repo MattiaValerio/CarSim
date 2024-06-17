@@ -1,0 +1,6 @@
+@CarSim.BackEnd_HostAddress = http://localhost:5262
+
+GET {{CarSim.BackEnd_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
