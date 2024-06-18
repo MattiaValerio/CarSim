@@ -1,5 +1,3 @@
-version: '3.4'
-
 services:
   carsim.backend:
     image: ${DOCKER_REGISTRY-}carsimbackend
@@ -7,27 +5,17 @@ services:
       context: .
       dockerfile: CarSim.BackEnd/Dockerfile
     depends_on:
-      - postgres
+      - carsim.database
+    ports:
+      - "5000:5000"
+      - "5001:5001"
 
-  postgres:
+  carsim.database:
     image: postgres:latest
-    hostname: postgres
-    container_name: postgres
+    container_name: carsim.database
     environment:
+      POSTGRES_DB: carsim
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin$
-      POSTGRES_DB: carsim
     ports:
-      - "5432:5432"
-
-  pgadmin:
-    depends_on:
-      - postgres
-    image: dpage/pgadmin4:latest
-    hostname: pgadmin
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
+      - 5432:5432
