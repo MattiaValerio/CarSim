@@ -1,8 +1,6 @@
 Una volta clonata la repo:
 ```
-
 docker-compose up -d
-
 ```
 
 L'API è disponibile ai seguenti indirizzi:
