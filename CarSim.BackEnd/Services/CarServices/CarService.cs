@@ -3,7 +3,6 @@ using CarSim.BackEnd.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace CarSim.BackEnd.Services.CarServices
 {
     public class CarService : ICarService
@@ -20,7 +19,7 @@ namespace CarSim.BackEnd.Services.CarServices
             return _context.Cars.Any(c => c.Plate == plate);
         }
 
-        public async Task<ResponseMessage<String>> GenerateCar()
+        public async Task<ResponseMessage<CarDto>> GenerateCar()
         {
             try
             {
@@ -35,26 +34,35 @@ namespace CarSim.BackEnd.Services.CarServices
                 await _context.Cars.AddAsync(car);
                 await _context.SaveChangesAsync();
 
-                return new ResponseMessage<string>() { 
+                return new ResponseMessage<CarDto>() { 
                     Message = "Car generated succesfully",
-                    Data = car.Plate,
+                    Data = car.CreateCarDto(),
                     Success = true
                 };
             }
             catch (Exception ex)
             {
-                return new ResponseMessage<string>()
+                return new ResponseMessage<CarDto>()
                 {
-                    Message = "Car not generated",
+                    Message = $"Car not generated: {ex.Message}",
                     Success = false
                 };
             }
         }
 
-        public async Task<ResponseMessage<Car>> CreateCar(int engine, CarBody body, CarType carType, CarFuelType fuelType)
+        public async Task<ResponseMessage<CarDto>> CreateCar(int engine, CarBody body, CarType carType, CarFuelType fuelType)
         {
             try
             {
+                if(engine < 1000 || engine > 5000)
+                {
+                    return new ResponseMessage<CarDto>()
+                    {
+                        Message = "Engine must be between 1000 and 5000",
+                        Success = false
+                    };
+                }
+
                 Car car = new Car
                 {
                     Engine = engine,
@@ -63,23 +71,21 @@ namespace CarSim.BackEnd.Services.CarServices
                     FuelType = fuelType
                 };
 
-                
-
                 await _context.Cars.AddAsync(car);
                 await _context.SaveChangesAsync();
 
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<CarDto>()
                 {
                     Message = "Car created succesfully",
-                    Data = car,
+                    Data = car.CreateCarDto(),
                     Success = true
                 };
             }
             catch (Exception ex)
             {
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<CarDto>()
                 {
-                    Message = "Car not created",
+                    Message = $"Car not created: {ex.Message}",
                     Success = false
                 };
             }
@@ -111,13 +117,13 @@ namespace CarSim.BackEnd.Services.CarServices
             {
                 return new ResponseMessage<CarType>()
                 {
-                    Message = "Car not found",
+                    Message = $"Car not found: {ex.Message}",
                     Success = false
                 };
             }
         }
 
-        public async Task<ResponseMessage<Car>> Accelerate(string plate)
+        public async Task<ResponseMessage<CarDto>> Accelerate(string plate)
         {
             try
             {
@@ -125,7 +131,7 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 if (car == null)
                 {
-                    return new ResponseMessage<Car>()
+                    return new ResponseMessage<CarDto>()
                     {
                         Message = "Car not found",
                         Success = false
@@ -136,7 +142,7 @@ namespace CarSim.BackEnd.Services.CarServices
                 {
                     car.Speed = 0;
                     await _context.SaveChangesAsync();
-                    return new ResponseMessage<Car>()
+                    return new ResponseMessage<CarDto>()
                     {
                         Message = "The car is out of fuel, please fill it up",
                         Success = false
@@ -147,24 +153,24 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 await _context.SaveChangesAsync();
 
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<CarDto>()
                 {
                     Message = "Car accelerated",
-                    Data = car,
+                    Data = car.CreateCarDto(),
                     Success = true
                 };
             }
             catch (Exception ex)
             {
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<CarDto>()
                 {
-                    Message = "Error during acceleration",
+                    Message = $"Error during acceleration: {ex.Message}",
                     Success = false
                 };
             }
         }
 
-        public async Task<ResponseMessage<Car>> Break(string plate)
+        public async Task<ResponseMessage<CarDto>> Break(string plate)
         {
             try
             {
@@ -172,7 +178,7 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 if (car == null)
                 {
-                    return new ResponseMessage<Car>()
+                    return new ResponseMessage<CarDto>()
                     {
                         Message = "Car not found",
                         Success = false
@@ -183,28 +189,28 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 await _context.SaveChangesAsync();
 
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<CarDto>()
                 {
                     Message = "Car breaking",
-                    Data = car,
+                    Data = car.CreateCarDto(),
                     Success = true
                 };
             }
             catch (Exception ex)
             {
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<CarDto>()
                 {
-                    Message = "Error during breaking",
+                    Message = $"Error during breaking: {ex.Message}",
                     Success = false
                 };
             }
         }
 
-        public async Task<ResponseMessage<Car>> Steer(string plate, SteerDir direction, int angles)
+        public async Task<ResponseMessage<CarDto>> Steer(string plate, SteerDir direction, int angles)
         {
             if (angles > 720)
             {
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<CarDto>()
                 {
                     Message = "Max steering angle is 720",
                     Success = false
@@ -213,7 +219,8 @@ namespace CarSim.BackEnd.Services.CarServices
 
             if (int.IsNegative(angles))
             {
-                return new ResponseMessage<Car>{
+                return new ResponseMessage<CarDto>
+                {
                     Message = "Steering angle cannot be negative",
                     Success = false
                 };
@@ -226,7 +233,8 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 if (car == null)
                 {
-                    return new ResponseMessage<Car>{
+                    return new ResponseMessage<CarDto>
+                    {
                         Message = "Car not found",
                         Success = false
                     };
@@ -236,16 +244,18 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 await _context.SaveChangesAsync();
 
-                return new ResponseMessage<Car>{
+                return new ResponseMessage<CarDto>
+                {
                     Message = "Car steered",
-                    Data = car,
+                    Data = car.CreateCarDto(),
                     Success = true
                 };
             }
             catch (Exception ex)
             {
-                return new ResponseMessage<Car>{
-                    Message = "Error during steering",
+                return new ResponseMessage<CarDto>
+                {
+                    Message = $"Error during steering: {ex.Message}",
                     Success = false
                 };
             }
@@ -269,8 +279,8 @@ namespace CarSim.BackEnd.Services.CarServices
                 return new ResponseMessage<int>()
                 {
                     Message = int.IsNegative(car.SteeringWheel) ?
-                    $" The car is going to the left at {car.SteeringWheel} degrees" :
-                    $" The car is going to the right at {car.SteeringWheel} degrees",
+                    $" The car is going to the left, the steering wheel is rotated by {car.SteeringWheel} degrees" :
+                    $" The car is going to the right, the steering wheel is rotated by {car.SteeringWheel} degrees",
                     Data = car.SteeringWheel,
                     Success = true
                 };
@@ -280,7 +290,7 @@ namespace CarSim.BackEnd.Services.CarServices
             {
                 return new ResponseMessage<int>()
                 {
-                    Message = $"Error during steering \n {ex.Message}",
+                    Message = $"Error while getting the direction: {ex.Message}",
                     Success = false
                 };
             }
@@ -314,13 +324,13 @@ namespace CarSim.BackEnd.Services.CarServices
             {
                 return new ResponseMessage<int>()
                 {
-                    Message = $"Error during steering: \n {ex.Message}",
+                    Message = $"Error during steering: {ex.Message}",
                     Success = false
                 };
             }
         }
 
-        public async Task<ResponseMessage<Car>> FillCar(string plate, CarFuelType fuel)
+        public async Task<ResponseMessage<string>> FillCar(string plate, CarFuelType fuel)
         {
             try
             {
@@ -328,9 +338,18 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 if (car == null)
                 {
-                    return new ResponseMessage<Car>()
+                    return new ResponseMessage<string>()
                     {
                         Message = "Car not found",
+                        Success = false
+                    };
+                }
+
+                if(car.Tank == 100)
+                {
+                    return new ResponseMessage<string>()
+                    {
+                        Message = "The car is already full",
                         Success = false
                     };
                 }
@@ -339,18 +358,18 @@ namespace CarSim.BackEnd.Services.CarServices
 
                 await _context.SaveChangesAsync();
 
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<string>()
                 {
                     Message = "Car filled",
-                    Data = car,
+                    Data = $" Car thank is now filled at 100%",
                     Success = true
                 };
             }
             catch (Exception ex)
             {
-                return new ResponseMessage<Car>()
+                return new ResponseMessage<string>()
                 {
-                    Message = $"Error during filling: \n {ex.Message}",
+                    Message = $"Error during filling: {ex.Message}",
                     Success = false
                 };
             }
@@ -384,7 +403,39 @@ namespace CarSim.BackEnd.Services.CarServices
             {
                 return new ResponseMessage<String>()
                 {
-                    Message = $"Error during honking: \n {ex.Message}",
+                    Message = $"Error during honking: {ex.Message}",
+                    Success = false
+                };
+            }
+        }
+
+        public async Task<ResponseMessage<List<CarDto>>> GetAllCars()
+        {
+            try
+            {
+                var cars = _context.Cars.ToList();
+
+                if (cars.Count == 0)
+                {
+                    return new ResponseMessage<List<CarDto>>()
+                    {
+                        Message = "There is no cars saved",
+                        Success = false
+                    };
+                }
+
+                return new ResponseMessage<List<CarDto>>()
+                {
+                    Success = true,
+                    Data = cars.Select(x => x.CreateCarDto()).ToList(),
+                    Message = $"Found {cars.Count()} saved"
+                };
+
+            }
+            catch (Exception ex) {
+                return new ResponseMessage<List<CarDto>>()
+                {
+                    Message = $"Error during getting all cars: {ex.Message}",
                     Success = false
                 };
             }

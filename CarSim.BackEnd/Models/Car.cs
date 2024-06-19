@@ -7,7 +7,7 @@ namespace CarSim.BackEnd.Models;
 public class Car
 {
     [Key]
-    public string Plate { get; set; }
+    public string Plate { get; set; } = string.Empty;
     public int Wheels { get; } = 4; // 4 wheels
     public int Engine { get; set; }
     public CarBody Body { get; set; } // material of the car body
@@ -30,7 +30,7 @@ public class Car
         SteeringWheel = 0;
         Accelerator = false;
         BrakePedal = false;
-        Engine = rnd.Next(1000, 3000);
+        Engine = rnd.Next(1000, 5000);
 
         Array carBody = Enum.GetValues(typeof(CarBody));
         Body = (CarBody) carBody.GetValue(rnd.Next(carBody.Length));
@@ -215,6 +215,24 @@ public class Car
         }
 
         return "NO HORN MOUNTED";
+    }
+
+    public CarDto CreateCarDto()
+    {
+        return new CarDto
+        {
+            Plate = Plate,
+            Engine = Engine + " cc",
+            Body = Body.ToString(),
+            SteeringWheel = SteeringWheel,
+            BrakePedal = BrakePedal,
+            Tank = Tank + " %",
+            FuelType = FuelType.ToString(),
+            Accelerator = Accelerator,
+            Type = Type.ToString(),
+            Horn = Horn.ToString(),
+            Speed = Speed + " km/h"
+        };
     }
 }
 
